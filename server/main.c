@@ -49,7 +49,7 @@ int main(int argc, const char * const argv[])
         }
     }
 
-    parse_yaml(config_file);
+    parse_file(config_file);
 
     c = redisConnectWithTimeout(hostname, port, timeout);
 

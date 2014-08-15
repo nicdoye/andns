@@ -1,5 +1,5 @@
-TARGET = andns
-LIBS = -lm -lhiredis -lyaml
+TARGET = and
+LIBS = -lm -lhiredis -ljansson
 CC = gcc
 CFLAGS = -g -Wall
 
@@ -17,7 +17,7 @@ HEADERS = $(wildcard *.h)
 .PRECIOUS: $(TARGET) $(OBJECTS)
 
 $(TARGET): $(OBJECTS)
-	$(CC) $(OBJECTS) -Wall $(LIBS) -o $@
+	$(CC) -g $(OBJECTS) -Wall $(LIBS) -o $@
 
 clean:
 	-rm -f *.o

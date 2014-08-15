@@ -1,77 +1,64 @@
+/* Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
+ *
+ *     http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
 /* vim: set tabstop=4:softtabstop=4:shiftwidth=4:noexpandtab */ 
 
-#include <yaml.h>
 #include <stdio.h>
+#include <string.h>
+#include <errno.h>
+#include "config.h"
 
-void parse_yaml(char *config_file) {
-	yaml_parser_t parser;
-	yaml_token_t  token;   
-	FILE *fh = fopen(config_file, "r");
+void parse_file(char *config_file) {
+    long fsize = 0;
+    char *data;
+
+    FILE *fh = fopen(config_file, "r");
+
     if (fh == NULL) {
-		printf("Could not open file %s\n", config_file);
-		exit(2);
-	}
+        printf("Could not open file %s\n", config_file);
+	exit(2);
+    }
 
-	/* Initialize parser */
-	if(!yaml_parser_initialize(&parser))
-		fputs("Failed to initialize parser!\n", stderr);
-	if(fh == NULL)
-    	fputs("Failed to open file!\n", stderr);
+    if (fseek(fh, 0L, SEEK_END)) {
+        printf("Error reading to end of file\n");
+        exit(errno);
+    }
 
-	/* Set input file */
-	yaml_parser_set_input_file(&parser, fh);
+    fsize = ftell(fh);
 
-  	do {
-    	yaml_parser_scan(&parser, &token);
-    	switch(token.type)
-    	{
-        /* Stream start/end */
-    	case YAML_STREAM_START_TOKEN: 
-			puts("STREAM START"); 
-			break;
-    	case YAML_STREAM_END_TOKEN:   
-			puts("STREAM END");   
-			break;
-    	/* Token types (read before actual token) */
-    	case YAML_KEY_TOKEN:   
-			printf("(Key token)   "); 
-			break;
-    	case YAML_VALUE_TOKEN: 
-			printf("(Value token) "); 
-			break;
-    	/* Block delimeters */
-    	case YAML_BLOCK_SEQUENCE_START_TOKEN: 
-			puts("<b>Start Block (Sequence)</b>"); 
-			break;
-    	case YAML_BLOCK_ENTRY_TOKEN:          
-			puts("<b>Start Block (Entry)</b>");    
-			break;
-    	case YAML_BLOCK_END_TOKEN:            
-			puts("<b>End block</b>");              
-			break;
-    	/* Data */
-    	case YAML_BLOCK_MAPPING_START_TOKEN:  
-			puts("[Block mapping]");            
-			break;
-    	case YAML_SCALAR_TOKEN:  
-			printf("scalar %s \n", token.data.scalar.value); 
-			break;
-    	/* Others */
-        case YAML_NO_TOKEN:
-			printf("Blank %d\n", YAML_NO_TOKEN);
-			break;
-    	default:
-      		printf("Got token of type %d\n", token.type);
-    	}
+    if (fseek(fh, 0L, SEEK_SET)) {
+        printf("Error returning to start of file\n");
+        exit(errno);
+    }
 
-    	if(token.type != YAML_STREAM_END_TOKEN || token.type != YAML_DOCUMENT_END_TOKEN)
-      		yaml_token_delete(&token);
+    data = (char *)malloc(fsize + 1);
+    if (data == NULL) {
+        printf("Malloc failed\n");
+        exit(errno);
+    }
+    fread(data, fsize, 1, fh);
 
-  	} while(token.type != YAML_STREAM_END_TOKEN || token.type != YAML_DOCUMENT_END_TOKEN || token.type != YAML_NO_TOKEN);
+    if(ferror(fh)) {
+        int e = ferror(fh);
+        printf("Error %d reading entire file", e);
+        exit(e);
+    }
 
-  	yaml_token_delete(&token);
+    fclose(fh);
 
-	/* Cleanup */
-	yaml_parser_delete(&parser);
-	fclose(fh);
+    data[fsize] = 0;
 }
+

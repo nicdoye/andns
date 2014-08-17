@@ -19,46 +19,97 @@
 #include <stdio.h>
 #include <string.h>
 #include <errno.h>
+#include "constants.h"
 #include "config.h"
+#include "globals.h"
 
 void parse_file(char *config_file) {
-    long fsize = 0;
-    char *data;
+    json_t *root;
+    json_t *server;
+    json_t *tmp;
+    json_error_t *error;
+    size_t flags;
+    char *tmp_str;
 
-    FILE *fh = fopen(config_file, "r");
+    config = (config_t *)malloc(sizeof(config_t));
+    config->server = (server_t *)malloc(sizeof(server_t));
 
-    if (fh == NULL) {
-        printf("Could not open file %s\n", config_file);
-	exit(2);
+    /* Top level element */
+    root = json_load_file(config_file, flags, error);
+
+    if(!json_is_object(root)) {
+        fprintf(stderr, "error: configuration data is not an object\n");
+        json_decref(root);
+        exit(4);
     }
 
-    if (fseek(fh, 0L, SEEK_END)) {
-        printf("Error reading to end of file\n");
-        exit(errno);
+    /* Server object */
+
+    server = json_object_get(root, C_ELT_SERVER);
+
+    if(!json_is_object(server)) {
+        fprintf(stderr, "error: configuration for server is not an object\n");
+        json_decref(server);
+        exit(4);
     }
 
-    fsize = ftell(fh);
+    /* Server Mode */
 
-    if (fseek(fh, 0L, SEEK_SET)) {
-        printf("Error returning to start of file\n");
-        exit(errno);
+    tmp = json_object_get(server, C_ELT_SERVER_MODE);
+
+    if(!json_is_string(tmp))
+    {
+        fprintf(stderr, "error: whatever is not a string\n");
+        json_decref(tmp);
+        exit(4);
     }
 
-    data = (char *)malloc(fsize + 1);
-    if (data == NULL) {
-        printf("Malloc failed\n");
-        exit(errno);
+    tmp_str = json_string_value(tmp);
+
+    if (!strcmp(tmp_str, C_ELT_SERVER_MODE_CACHE_ONLY)) {
+        config->server->mode = AND_MODE_CACHE_ONLY;
+    } 
+    else if (!strcmp(tmp_str, C_ELT_SERVER_MODE_MASTER)) {
+        config->server->mode = AND_MODE_MASTER;
+        fprintf(stderr,"Not implemented yet.\nBye\n");
+        exit(4);
     }
-    fread(data, fsize, 1, fh);
-
-    if(ferror(fh)) {
-        int e = ferror(fh);
-        printf("Error %d reading entire file", e);
-        exit(e);
+    else if (!strcmp(tmp_str, C_ELT_SERVER_MODE_MIXED)) {
+        config->server->mode = AND_MODE_MIXED;;
+        fprintf(stderr,"Not implemented yet.\nBye\n");
+        exit(4);
+    }
+    else {
+       fprintf(stderr, "error: server mode must be one of %s, %s or %s\n", C_ELT_SERVER_MODE_CACHE_ONLY, C_ELT_SERVER_MODE_MASTER, C_ELT_SERVER_MODE_MIXED);
+       exit(4);
     }
 
-    fclose(fh);
+    free(tmp_str);
+    free(tmp);
 
-    data[fsize] = 0;
+    tmp = json_object_get(server, C_ELT_SERVER_UDP);
+
+    if(!json_is_string(tmp))
+    {
+        fprintf(stderr, "error: whatever is not a boolean\n");
+        json_decref(tmp);
+        exit(4);
+    }
+
+    config->server->udp = !strcmp(json_string_value(tmp), "false");
+    free(tmp);
+
+    tmp = json_object_get(server, C_ELT_SERVER_TCP);
+
+    if(!json_is_string(tmp))
+    {
+        fprintf(stderr, "error: whatever is not a boolean\n");
+        json_decref(tmp);
+        exit(4);
+    }
+
+    config->server->tcp = !strcmp(json_string_value(tmp), "false");
+    free(tmp);
+
+
 }
-

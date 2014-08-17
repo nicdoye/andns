@@ -15,5 +15,7 @@
  */
 
 #include <jansson.h>
+#include "types.h"
 
 void parse_file(char *);
+void parse_json(char *);

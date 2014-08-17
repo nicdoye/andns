@@ -24,6 +24,7 @@
 #include "main.h"
 #include "constants.h"
 #include "config.h"
+#include "globals.h"
 
 int main(int argc, const char * const argv[])
 {

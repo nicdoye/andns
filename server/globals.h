@@ -14,18 +14,28 @@
  * limitations under the License.
  */
 
-#define CONFIG_FILE "/etc/and/config.json"
+typedef enum {
+    AND_MODE_CACHE_ONLY,
+    AND_MODE_MASTER,
+    AND_MODE_MIXED
+} and_mode_t;
 
-#define C_ELT_ROOT "config"
+typedef struct {
+    and_mode_t mode;
+    int udp; /* boolean */
+    int tcp; /* boolean */
+    short port;
+} server_t;
 
-#define C_ELT_SERVER "server"
+typedef struct {
+    char *server;
+    short port;
+} redis_t;
 
-#define C_ELT_SERVER_MODE "mode"
-#define C_ELT_SERVER_MODE_CACHE_ONLY "cache-only"
-#define C_ELT_SERVER_MODE_MASTER "master"
-#define C_ELT_SERVER_MODE_MIXED "mixed"
+typedef struct {
+    server_t *server;
+    char *master_dir;
+    redis_t *redis;
+} config_t;
 
-#define C_ELT_SERVER_UDP "udp"
-#define C_ELT_SERVER_TCP "tcp"
-#define C_ELT_SERVER_PORT "port"
-
+config_t *config;

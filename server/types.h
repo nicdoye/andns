@@ -14,18 +14,3 @@
  * limitations under the License.
  */
 
-#define CONFIG_FILE "/etc/and/config.json"
-
-#define C_ELT_ROOT "config"
-
-#define C_ELT_SERVER "server"
-
-#define C_ELT_SERVER_MODE "mode"
-#define C_ELT_SERVER_MODE_CACHE_ONLY "cache-only"
-#define C_ELT_SERVER_MODE_MASTER "master"
-#define C_ELT_SERVER_MODE_MIXED "mixed"
-
-#define C_ELT_SERVER_UDP "udp"
-#define C_ELT_SERVER_TCP "tcp"
-#define C_ELT_SERVER_PORT "port"
-

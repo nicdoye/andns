@@ -32,3 +32,10 @@
 #define C_ELT_MASTER "master"
 #define C_ELT_MASTER_ROOT "root"
 
+#define C_ELT_BACKEND "backend"
+#define C_ELT_BACKEND_REDIS "redis"
+
+/* Should be reasonably common across backend implementations */
+#define C_ELT_BACKEND_SERVER "server"
+#define C_ELT_BACKEND_PORT "port"
+

@@ -35,7 +35,7 @@ typedef struct {
 typedef struct {
     server_t *server;
     char *master_dir;
-    redis_t *redis;
+    redis_t **redis;
 } config_t;
 
 config_t *config;

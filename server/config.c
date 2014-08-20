@@ -23,6 +23,11 @@
 #include "globals.h"
 
 /* Obviously A LOT of refactoring could go on in here! */
+/*
+ * root is the top level json object
+ * json_object is the next level down the tree
+ * tmp normally marks the level below that
+ */
 void parse_file(char *config_file) {
     json_t *root;
     json_t *json_object;
@@ -33,6 +38,7 @@ void parse_file(char *config_file) {
 
     config = (config_t *)malloc(sizeof(config_t));
     config->server = (server_t *)malloc(sizeof(server_t));
+
 
     /* Top level element */
     root = json_load_file(config_file, flags, error);
@@ -64,7 +70,7 @@ void parse_file(char *config_file) {
         exit(4);
     }
 
-    tmp_str = json_string_value(tmp);
+    tmp_str = strdup(json_string_value(tmp));
 
     if (!strcmp(tmp_str, C_ELT_SERVER_MODE_CACHE_ONLY)) {
         config->server->mode = AND_MODE_CACHE_ONLY;
@@ -110,13 +116,11 @@ void parse_file(char *config_file) {
 
     config->server->tcp = !strcmp(json_string_value(tmp), "false");
     free(tmp);
-
     free(json_object);
 
     if (config->server->mode == AND_MODE_MASTER || config->server->mode == AND_MODE_MIXED) {
 
         json_object = json_object_get(root, C_ELT_MASTER);
-
 
         if(!json_is_object(json_object)) {
             fprintf(stderr, "error: configuration for master is not an object\n");
@@ -135,16 +139,74 @@ void parse_file(char *config_file) {
             exit(4);
         }
 
-        config->master->root = strdup(json_string_value(tmp));
+        config->master_dir = strdup(json_string_value(tmp));
 
-        if (NULL == config->master->root) {
-            fprintf("Malloc error\n");
+        if (NULL == config->master_dir) {
+            fprintf(stderr,"Malloc error\n");
             exit(4);
         }
 
+        free(tmp);
         free(json_object);
     }
 
     json_object = json_object_get(root, C_ELT_BACKEND);
+
+    if(!json_is_object(json_object)) {
+        fprintf(stderr, "error: configuration for master is not an object\n");
+        json_decref(json_object);
+        exit(4);
+    }
+
+    /* Only backend actually supported */
+    tmp = json_object_get(json_object, C_ELT_BACKEND_REDIS);
+    if (!json_is_array(tmp)) {
+        fprintf(stderr, "error: configuration for redis is not an array\n");
+        json_decref(json_object);
+        exit(4);
+    }
+
+    for (int i = 0; i <= json_array_size(tmp); i++) {
+        json_t *redis_server = json_array_get(tmp,i);
+        json_t *tmp_object;
+
+        config->redis[i] = (redis_t *)malloc(sizeof(redis_t));
+
+        if(!json_is_object(redis_server)) {
+            fprintf(stderr, "error: configuration for redis_server is not an object\n");
+            json_decref(json_object);
+            exit(4);
+        }
+
+        tmp_object = json_object_get(redis_server, C_ELT_BACKEND_SERVER);
+        
+        if(!json_is_string(tmp_object)) {
+            fprintf(stderr, "error: configuration for server name is not an object\n");
+            json_decref(json_object);
+            exit(4);
+        }
+
+        config->redis[i]->server = strdup(json_string_value(tmp_object));
+        free(tmp_object);
+        
+        tmp_object = json_object_get(redis_server, C_ELT_BACKEND_PORT);
+        
+        if(!json_is_integer(tmp_object)) {
+            fprintf(stderr, "error: configuration for server name is not an object\n");
+            exit(4);
+        }
+
+        config->redis[i]->port = json_integer_value(tmp_object);
+        if (config->redis[i]->port == 0) {
+            fprintf(stderr, "That's not an integer\n");
+            exit(4);
+        }
+
+        free(tmp_object);
+        free(redis_server);
+    }
+
+    free(tmp);
+    free(json_object);
 
 }

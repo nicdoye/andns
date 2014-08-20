@@ -14,7 +14,6 @@
  * limitations under the License.
  */
 
-/* vim: set tabstop=4:softtabstop=4:shiftwidth=4:noexpandtab */ 
 
 #include <stdio.h>
 #include <string.h>
@@ -23,9 +22,10 @@
 #include "config.h"
 #include "globals.h"
 
+/* Obviously A LOT of refactoring could go on in here! */
 void parse_file(char *config_file) {
     json_t *root;
-    json_t *server;
+    json_t *json_object;
     json_t *tmp;
     json_error_t *error;
     size_t flags;
@@ -45,17 +45,17 @@ void parse_file(char *config_file) {
 
     /* Server object */
 
-    server = json_object_get(root, C_ELT_SERVER);
+    json_object = json_object_get(root, C_ELT_SERVER);
 
-    if(!json_is_object(server)) {
+    if(!json_is_object(json_object)) {
         fprintf(stderr, "error: configuration for server is not an object\n");
-        json_decref(server);
+        json_decref(json_object);
         exit(4);
     }
 
     /* Server Mode */
 
-    tmp = json_object_get(server, C_ELT_SERVER_MODE);
+    tmp = json_object_get(json_object, C_ELT_SERVER_MODE);
 
     if(!json_is_string(tmp))
     {
@@ -87,7 +87,7 @@ void parse_file(char *config_file) {
     free(tmp_str);
     free(tmp);
 
-    tmp = json_object_get(server, C_ELT_SERVER_UDP);
+    tmp = json_object_get(json_object, C_ELT_SERVER_UDP);
 
     if(!json_is_string(tmp))
     {
@@ -99,7 +99,7 @@ void parse_file(char *config_file) {
     config->server->udp = !strcmp(json_string_value(tmp), "false");
     free(tmp);
 
-    tmp = json_object_get(server, C_ELT_SERVER_TCP);
+    tmp = json_object_get(json_object, C_ELT_SERVER_TCP);
 
     if(!json_is_string(tmp))
     {
@@ -111,5 +111,40 @@ void parse_file(char *config_file) {
     config->server->tcp = !strcmp(json_string_value(tmp), "false");
     free(tmp);
 
+    free(json_object);
+
+    if (config->server->mode == AND_MODE_MASTER || config->server->mode == AND_MODE_MIXED) {
+
+        json_object = json_object_get(root, C_ELT_MASTER);
+
+
+        if(!json_is_object(json_object)) {
+            fprintf(stderr, "error: configuration for master is not an object\n");
+            json_decref(json_object);
+            exit(4);
+        }
+
+        /* Master Mode */
+
+        tmp = json_object_get(json_object, C_ELT_MASTER_ROOT);
+
+        if(!json_is_string(tmp))
+        {
+            fprintf(stderr, "error: whatever is not a string\n");
+            json_decref(tmp);
+            exit(4);
+        }
+
+        config->master->root = strdup(json_string_value(tmp));
+
+        if (NULL == config->master->root) {
+            fprintf("Malloc error\n");
+            exit(4);
+        }
+
+        free(json_object);
+    }
+
+    json_object = json_object_get(root, C_ELT_BACKEND);
 
 }

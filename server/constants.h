@@ -29,3 +29,6 @@
 #define C_ELT_SERVER_TCP "tcp"
 #define C_ELT_SERVER_PORT "port"
 
+#define C_ELT_MASTER "master"
+#define C_ELT_MASTER_ROOT "root"
+

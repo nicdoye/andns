@@ -33,12 +33,13 @@ void parse_file(char *config_file) {
     json_t *json_object;
     json_t *tmp;
     json_error_t *error;
-    size_t flags;
+    size_t flags = 0;
     char *tmp_str;
+    int redis_servers;
 
-    config = (config_t *)malloc(sizeof(config_t));
-    config->server = (server_t *)malloc(sizeof(server_t));
-
+    error = malloc(sizeof(json_error_t));
+    config = malloc(sizeof(config_t));
+    config->server = malloc(sizeof(server_t));
 
     /* Top level element */
     root = json_load_file(config_file, flags, error);
@@ -69,7 +70,6 @@ void parse_file(char *config_file) {
         json_decref(tmp);
         exit(4);
     }
-
     tmp_str = strdup(json_string_value(tmp));
 
     if (!strcmp(tmp_str, C_ELT_SERVER_MODE_CACHE_ONLY)) {
@@ -105,6 +105,7 @@ void parse_file(char *config_file) {
     config->server->udp = !strcmp(json_string_value(tmp), "false");
     free(tmp);
 
+    /* TCP */
     tmp = json_object_get(json_object, C_ELT_SERVER_TCP);
 
     if(!json_is_string(tmp))
@@ -116,8 +117,23 @@ void parse_file(char *config_file) {
 
     config->server->tcp = !strcmp(json_string_value(tmp), "false");
     free(tmp);
+
+    /* Server PORT */
+    tmp = json_object_get(json_object, C_ELT_SERVER_PORT);
+
+    if(!json_is_integer(tmp))
+    {
+        fprintf(stderr, "error: whatever is not an int\n");
+        json_decref(tmp);
+        exit(4);
+    }
+
+    config->server->port = json_integer_value(tmp);
+
+    free(tmp);
     free(json_object);
 
+    /* MASTER STUFF */
     if (config->server->mode == AND_MODE_MASTER || config->server->mode == AND_MODE_MIXED) {
 
         json_object = json_object_get(root, C_ELT_MASTER);
@@ -128,7 +144,7 @@ void parse_file(char *config_file) {
             exit(4);
         }
 
-        /* Master Mode */
+        /* Master Mode Root Dir */
 
         tmp = json_object_get(json_object, C_ELT_MASTER_ROOT);
 
@@ -166,11 +182,20 @@ void parse_file(char *config_file) {
         exit(4);
     }
 
-    for (int i = 0; i <= json_array_size(tmp); i++) {
+    redis_servers = json_array_size(tmp);
+    
+    if (!redis_servers) {
+        fprintf(stderr, "No backend redis servers\n");
+        exit(4);
+    }
+
+    config->redis = malloc(redis_servers * sizeof(redis_t*));
+
+    for (int i = 0; i < json_array_size(tmp); i++) {
         json_t *redis_server = json_array_get(tmp,i);
         json_t *tmp_object;
 
-        config->redis[i] = (redis_t *)malloc(sizeof(redis_t));
+        config->redis[i] = malloc(sizeof(redis_t));
 
         if(!json_is_object(redis_server)) {
             fprintf(stderr, "error: configuration for redis_server is not an object\n");
@@ -209,4 +234,14 @@ void parse_file(char *config_file) {
     free(tmp);
     free(json_object);
 
+}
+
+void dump_config() {
+    printf("mode\t%d\n", config->server->mode);
+    printf("udp\t%d\n", config->server->udp);
+    printf("tcp\t%d\n", config->server->tcp);
+    printf("port\t%d\n", config->server->port);
+    printf("master\t%s\n", config->master_dir);
+    printf("r0svr\t%s\n", config->redis[0]->server);
+    printf("r0port\t%d\n", config->redis[0]->port);
 }

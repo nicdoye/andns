@@ -51,6 +51,7 @@ int main(int argc, const char * const argv[])
     }
 
     parse_file(config_file);
+    /* dump_config(); */
 
     c = redisConnectWithTimeout(hostname, port, timeout);
 

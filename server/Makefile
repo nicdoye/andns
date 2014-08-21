@@ -1,7 +1,7 @@
 TARGET = and
 LIBS = -lm -lhiredis -ljansson
 CC = gcc
-CFLAGS = -g -Wall
+CFLAGS = -g -Wall -std=c99
 
 .PHONY: default all clean
 
@@ -12,12 +12,12 @@ OBJECTS = $(patsubst %.c, %.o, $(wildcard *.c))
 HEADERS = $(wildcard *.h)
 
 %.o: %.c $(HEADERS)
-	$(CC) -std=c99 $(CFLAGS) -c $< -o $@
+	$(CC) $(CFLAGS) -c $< -o $@
 
 .PRECIOUS: $(TARGET) $(OBJECTS)
 
 $(TARGET): $(OBJECTS)
-	$(CC) -g $(OBJECTS) -Wall $(LIBS) -o $@
+	$(CC) $(CFLAGS) $(OBJECTS) $(LIBS) -o $@
 
 clean:
 	-rm -f *.o

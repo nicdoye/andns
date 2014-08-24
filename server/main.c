@@ -87,9 +87,6 @@ void runServer() {
 }
 */
 
-void runServer() {
-}
-
 void print_usage() {
     printf("whatever\n");
 }

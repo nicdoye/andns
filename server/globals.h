@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+#include <hiredis/hiredis.h>
+
 typedef enum {
     AND_MODE_CACHE_ONLY,
     AND_MODE_MASTER,
@@ -38,4 +40,5 @@ typedef struct {
     redis_t **redis;
 } config_t;
 
-config_t *config;
+extern config_t *config;
+extern redisContext *context;

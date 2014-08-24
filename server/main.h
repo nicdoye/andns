@@ -13,5 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
+void connectToRedis(void);
+void runServer(void);
+void disconnectFromRedis(void);
 void print_usage(void);

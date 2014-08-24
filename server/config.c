@@ -18,9 +18,9 @@
 #include <stdio.h>
 #include <string.h>
 #include <errno.h>
+#include "globals.h"
 #include "constants.h"
 #include "config.h"
-#include "globals.h"
 
 /* Obviously A LOT of refactoring could go on in here! */
 /*

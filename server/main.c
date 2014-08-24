@@ -19,25 +19,19 @@
 #include <string.h>
 #include <unistd.h>
 #include <getopt.h>
-#include <hiredis/hiredis.h>
 
 #include "main.h"
 #include "constants.h"
 #include "config.h"
 #include "globals.h"
 
+config_t *config = 0;
+redisContext *context = 0;
+
 int main(int argc, const char * const argv[])
 {
     int option = 0;
-    redisContext *c;
-    redisReply *reply;
-    /* clash */
-    const char *hostname = (argc > 1) ? argv[1] : "127.0.0.1";
-    int port = (argc > 2) ? atoi(argv[2]) : 6379;
-
     char *config_file = CONFIG_FILE;
-
-    struct timeval timeout = { 1, 500000 }; // 1.5 seconds
 
     while ((option = getopt(argc, argv,"f:")) != -1) {
         switch (option) {
@@ -52,36 +46,55 @@ int main(int argc, const char * const argv[])
 
     parse_file(config_file);
     /* dump_config(); */
+    connectToRedis();
+    runServer();
+    disconnectFromRedis();
+    exit(0);
+}
 
-    c = redisConnectWithTimeout(hostname, port, timeout);
+void connectToRedis() {
+    struct timeval timeout = { 1, 500000 }; // 1.5 seconds
 
-    if (c == NULL || c->err) {
-        if (c) {
-            printf("Connection error: %s\n", c->errstr);
-            redisFree(c);
+    /* Assume one host for now */
+    context = redisConnectWithTimeout(config->redis[0]->server, config->redis[0]->port, timeout);
+
+    if (context == NULL || context->err) {
+        if (context) {
+            printf("Connection error: %s\n", context->errstr);
+            redisFree(context);
         } else {
             printf("Connection error: can't allocate redis context\n");
         }
         exit(1);
     }
+}
 
-    reply = redisCommand(c, "SET %s %s", "foo.com", "127.0.0.1");
+/*
+void runServer() {
+    redisReply *reply;
+
+    reply = redisCommand(context, "SET %s %s", "foo.com", "127.0.0.1");
     freeReplyObject(reply);
-    reply = redisCommand(c, "EXPIRE %s %s", "foo.com", "10");
+    reply = redisCommand(context, "EXPIRE %s %s", "foo.com", "10");
     freeReplyObject(reply);
     do {
-        reply = redisCommand(c,"TTL foo.com");
+        reply = redisCommand(context,"TTL foo.com");
         printf("TTL foo.com:  %lld\n", reply->integer);
         sleep(1);
     } while ( reply->integer >= 0 ) ;
     freeReplyObject(reply);
 
-    /* Disconnects and frees the context */
-    redisFree(c);
-    exit(0);
+}
+*/
+
+void runServer() {
 }
 
 void print_usage() {
     printf("whatever\n");
 }
 
+void disconnectFromRedis() {
+    /* Disconnects and frees the context */
+    redisFree(context);
+}

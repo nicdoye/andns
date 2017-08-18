@@ -56,11 +56,13 @@ different to mine).</p>
 
 <p>Perhaps the simplest designs are the best, which is why this is so short.</p>
 
-<p><b>Store all the data in a sharded, key-value store, which natively supports TTLs.</b></p>
+<ol>
+<li>Store all the data in a sharded, key-value store, which natively supports TTLs.</li>
+<li>Have multiple front-ends: all of which are equal: no masters and no secondaries.</li>
+</ol>
 
-<p>And that's it. My first attempt R-Squared was an attempt/PoC using Ruby and Redis (hence R<sup>2</sup>). Then
-I was going to write it in <a href="https://github.com/nicdoye/andns">C</a> for no better reason than it would be fun and more
-hardcore. Since then <a href="https://coredns.io/">CoreDNS</a> has come on the scene and:</p>
+<p>And that's it. <a href="https://redis.io/">Redis</a> is the original choice for storing the data. For the "front end", since envisioning the idea,
+<a href="https://coredns.io/">CoreDNS</a> has come on the scene and:</p>
 
 <ol>
 <li>It's already a DNS server: no TCP/UDP server or custom DNS daemon code to write</li>
@@ -68,7 +70,19 @@ hardcore. Since then <a href="https://coredns.io/">CoreDNS</a> has come on the s
 </ol>
 
 <p>So we should stand on the shoulders of giants, not reimplement the wheel and do a CoreDNS Middleware + Redis-based proof-of-concept, just to see if this: 
-works at all; works as a design without endless tortuous hacks; works correctly; and is fast enough. Then we can look at scalability issues.</p>
+works at all; is a usable design; performs and scales.</p>
+
+<p>Early optimisation is always a bad thing, so this may not be necessary.
+I've written it here, because it's a common design pattern
+for large-scale systems (because it's a common problem for them): 
+put a(nother) (set of) DNS caches in front.</p>
+<ul>
+<li>For a caching-only name server, any caching-only name server will do and
+this could help with (locally?) hot zone records</li> 
+<li>However, authoratitive name servers would need the caches to act like slaves
+and needs more thought.</li>
+</ul>
+<p>And I repeat: this may not be necessary.</p>
 
 <h3>Sample prototype</h3>
 
@@ -89,6 +103,11 @@ too early, with no real code).</p>
 not be original. Alternatively, it could suck, and now I look like an arrogant &lt;swear-word&gt;.)</i></p>
 
 <h3>History</h3>
+
+<p>My first attempt R-Squared was an attempt/PoC using Ruby and Redis (hence R<sup>2</sup>). 
+Then
+I was going to write AND (Another Name Daemon) in C for no better reason than it would be fun and more
+hardcore.</p>
 
 <ol>
 <li>2013 <a href="https://github.com/nicdoye/rsquared">R Squared</a>'s empty repo.</li>
